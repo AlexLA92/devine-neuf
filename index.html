@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Devine Neuf Ciné</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Manrope:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one-column phone app. Game screens fit one screen (3x3 grid), other screens scroll with a sticky action. */
+:root {
+  --bg: #17110f;
+  --surface: #221a17;
+  --surface-2: #2d2320;
+  --line: #3d302b;
+  --fg: #f5ece4;
+  --muted: #b3a197;
+  --accent: #f2b33d;
+  --accent-ink: #231705;
+  --danger: #e2574c;
+  --good: #7cc58a;
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  max-width: 560px; margin: 0 auto; min-height: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 0;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.app.fit { height: 100%; min-height: 0; overflow: hidden; gap: 10px; padding-block: 10px; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2 { font-family: var(--display); text-transform: uppercase; letter-spacing: .02em; margin: 0; text-wrap: balance; }
+.label { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.hint { color: var(--muted); font-size: 14px; margin: 0; }
+
+/* Marquee */
+.marquee {
+  position: relative; border: 2px solid var(--accent); border-radius: 6px; padding: 22px 18px 18px;
+  background: radial-gradient(120% 90% at 50% 0%, #3a2414 0%, var(--surface) 70%);
+  text-align: center;
+}
+.marquee::before, .marquee::after {
+  content: ""; position: absolute; left: 10px; right: 10px; height: 6px;
+  background-image: radial-gradient(circle, var(--accent) 2px, transparent 2.6px);
+  background-size: 16px 6px; background-repeat: repeat-x; opacity: .9;
+}
+.marquee::before { top: 6px; }
+.marquee::after { bottom: 6px; }
+.marquee h1 { font-size: clamp(44px, 13vw, 68px); line-height: .9; color: var(--accent); font-weight: 900; }
+.marquee p { margin: 8px 0 0; color: var(--muted); }
+
+.section { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 10px; align-items: center; }
+
+/* Setup */
+.team-input { display: flex; gap: 8px; align-items: center; }
+.team-input input {
+  flex: 1; min-width: 0; padding: 12px 14px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--fg); font: inherit; font-weight: 700;
+}
+.swatch { width: 14px; height: 40px; border-radius: 3px; flex: none; }
+.icon-btn { width: 40px; height: 40px; border-radius: 6px; background: var(--surface-2); color: var(--muted); font-size: 20px; flex: none; }
+.setting { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); gap: 12px; }
+.setting:last-child { border-bottom: 0; }
+.stepper { display: flex; align-items: center; gap: 4px; }
+.stepper button { width: 38px; height: 38px; border-radius: 6px; background: var(--surface-2); font-size: 20px; font-weight: 800; }
+.stepper output { min-width: 56px; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 14px; color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent); }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mode { text-align: left; padding: 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 4px; }
+.mode b { font-family: var(--display); font-size: 22px; text-transform: uppercase; line-height: 1; }
+.mode span { font-size: 13px; color: var(--muted); }
+.mode[aria-pressed="true"] { border: 2px solid var(--accent); }
+.mode[aria-pressed="true"] b { color: var(--accent); }
+.toggle { width: 52px; height: 30px; border-radius: 999px; background: var(--surface-2); position: relative; flex: none; border: 1px solid var(--line); }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--muted); transition: transform .15s; }
+.toggle[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
+.toggle[aria-checked="true"]::after { transform: translateX(22px); background: var(--accent-ink); }
+
+.cta {
+  width: 100%; padding: 14px; border-radius: 6px; background: var(--accent); color: var(--accent-ink);
+  font-family: var(--display); font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: .04em;
+}
+.cta:disabled { opacity: .4; cursor: not-allowed; }
+.cta.quiet { background: var(--surface-2); color: var(--fg); }
+.ghost { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--line); font-weight: 700; color: var(--muted); }
+.foot {
+  position: sticky; bottom: 0; margin-top: auto; display: flex; flex-direction: column; gap: 8px;
+  padding-block: 10px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bg);
+}
+
+/* Game screen */
+.top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-width: 0; }
+.tag { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 7px; border-radius: 4px; background: var(--surface-2); color: var(--muted); }
+.team-tag { font-weight: 800; color: var(--c); }
+.timer { font-family: var(--display); font-weight: 900; font-size: 44px; line-height: .85; font-variant-numeric: tabular-nums; color: var(--accent); flex: none; }
+.timer.low { color: var(--danger); }
+.timer.over { font-size: 22px; color: var(--danger); }
+.question { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 6.4vw, 32px); line-height: 1.02; text-transform: none; letter-spacing: 0; }
+.status { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; min-height: 22px; }
+.next-pts { font-weight: 800; color: var(--accent); }
+
+.grid {
+  flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 6px; list-style: none; margin: 0; padding: 0;
+}
+.tile {
+  position: relative; display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 6px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line);
+  font-weight: 800; font-size: clamp(12px, 3.4vw, 16px); line-height: 1.15; min-width: 0; overflow: hidden; overflow-wrap: anywhere;
+}
+button.tile { width: 100%; height: 100%; }
+.tile { flex-direction: column; gap: 2px; }
+.tile .alt { font-size: 10px; font-weight: 600; color: var(--muted); line-height: 1.1; }
+.menu-btn { padding: 5px 10px; border-radius: 4px; border: 1px solid var(--line); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); flex: none; }
+.duo { font-size: 14px; color: var(--muted); }
+.duo b { color: var(--c); }
+.tile .n { position: absolute; top: 4px; left: 6px; font-family: var(--display); font-size: 14px; color: var(--muted); }
+.tile.hidden-a { font-family: var(--display); font-size: 34px; color: var(--line); }
+.tile.found { border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 24%, var(--surface)); }
+.tile.found .n { color: var(--c); }
+.tile .who { position: absolute; bottom: 3px; right: 6px; font-size: 10px; font-weight: 800; color: var(--c); }
+.tile.missed { border-style: dashed; color: var(--muted); font-weight: 700; }
+.tile.pop { animation: pop .35s ease-out; }
+@keyframes pop { 40% { transform: scale(1.08); } }
+
+.guess { display: flex; gap: 8px; align-items: center; }
+.guess input {
+  flex: 1; min-width: 0; padding: 12px 14px; border-radius: 6px; border: 2px solid var(--line);
+  background: var(--surface); color: var(--fg); font: inherit; font-weight: 700; font-size: 17px;
+}
+.guess input.bad { border-color: var(--danger); animation: shake .3s; }
+.guess input.ok { border-color: var(--good); }
+.guess .cta { width: auto; padding: 10px 16px; font-size: 20px; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.wrong { display: flex; gap: 6px; overflow: hidden; white-space: nowrap; font-size: 13px; color: var(--muted); min-height: 18px; }
+.wrong s { opacity: .8; }
+
+.scores { display: flex; gap: 6px; overflow-x: auto; }
+.score { flex: 1 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 5px 8px; border-radius: 4px; background: var(--surface); font-size: 13px; font-weight: 700; border-left: 4px solid var(--c); white-space: nowrap; }
+.score span { font-variant-numeric: tabular-nums; color: var(--muted); }
+
+/* Team picker (game master mode) */
+.sheet { position: fixed; inset: 0; z-index: 20; background: rgb(0 0 0 / .55); display: flex; align-items: flex-end; }
+.sheet-in {
+  width: 100%; max-width: 560px; margin: 0 auto; background: var(--surface); border-radius: 12px 12px 0 0;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sheet-in h3 { margin: 0; font-family: var(--display); font-size: 26px; text-transform: uppercase; }
+.pick { padding: 14px; border-radius: 6px; border: 2px solid var(--c); font-weight: 800; font-size: 18px; text-align: left; }
+
+/* Handoff and results */
+.handoff { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 12px; }
+.handoff h2 { font-size: clamp(48px, 15vw, 80px); line-height: .9; color: var(--c); }
+.table { display: flex; flex-direction: column; gap: 6px; }
+.rank { display: grid; grid-template-columns: 30px 1fr auto auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 6px; background: var(--surface); border-left: 6px solid var(--c); }
+.rank .pos { font-family: var(--display); font-size: 24px; font-weight: 900; color: var(--muted); }
+.rank .name { font-weight: 800; min-width: 0; overflow-wrap: anywhere; }
+.rank .delta { font-size: 13px; color: var(--good); font-weight: 800; font-variant-numeric: tabular-nums; }
+.rank .total { font-family: var(--display); font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.rank.first .pos { color: var(--accent); }
+.winner { text-align: center; }
+.winner h2 { font-size: clamp(40px, 12vw, 60px); color: var(--accent); line-height: .95; }
+
+.flash { animation: flash .6s ease-out 2; }
+@keyframes flash { 50% { background: color-mix(in srgb, var(--danger) 35%, var(--bg)); } }
+@media (prefers-reduced-motion: reduce) { .flash, .tile.pop, .guess input.bad { animation: none; } .toggle::after { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+<div id="sheet"></div>
+
+<script>
+// Questions from the Notion "Banque de questions" (statut != Rejetée), 2026-11-15.
+// "a": the 9 answers separated by " ; ". Inside one answer, "|" separates the accepted spellings (the first one is shown).
+const BANK = [
+  {q:"Vice-Versa 2 : les 9 émotions de Riley",c:"Personnages",d:"Facile",a:"Joie|Joy ; Tristesse|Sadness ; Colère|Anger ; Peur|Fear ; Dégoût|Disgust ; Anxiété|Anxiety ; Envie|Envy ; Ennui ; Embarras|Embarrassment"},
+  {q:"Pokémon : les 3 starters de Kanto et leurs évolutions",c:"Séries",d:"Facile",a:"Bulbizarre|Bulbasaur ; Herbizarre|Ivysaur ; Florizarre|Venusaur ; Salamèche|Charmander ; Reptincel|Charmeleon ; Dracaufeu|Charizard ; Carapuce|Squirtle ; Carabaffe|Wartortle ; Tortank|Blastoise"},
+  {q:"Harry Potter : les 9 membres de la famille Weasley (parents et enfants)",c:"Personnages",d:"Facile",a:"Arthur ; Molly ; Bill|William ; Charlie ; Percy ; Fred ; George ; Ron|Ronald ; Ginny|Ginevra"},
+  {q:"Les 9 films de Christopher Nolan jusqu'à Interstellar",c:"Films",d:"Moyen",a:"Following ; Memento ; Insomnia ; Batman Begins ; Le Prestige|The Prestige ; The Dark Knight|Le Chevalier noir ; Inception ; The Dark Knight Rises ; Interstellar"},
+  {q:"Palme d'or de Cannes, 2016 à 2025 (pas d'édition en 2020)",c:"Récompenses",d:"Difficile",a:"Moi, Daniel Blake|I, Daniel Blake ; The Square ; Une affaire de famille|Shoplifters ; Parasite ; Titane ; Sans filtre|Triangle of Sadness ; Anatomie d'une chute|Anatomy of a Fall ; Anora ; Un simple accident|It Was Just an Accident"},
+  {q:"Les 9 films réalisés par Hayao Miyazaki chez Ghibli entre 1986 et 2013",c:"Films",d:"Moyen",a:"Le Château dans le ciel|Laputa ; Mon voisin Totoro|Totoro ; Kiki la petite sorcière|Kiki ; Porco Rosso ; Princesse Mononoké|Mononoke ; Le Voyage de Chihiro|Chihiro ; Le Château ambulant ; Ponyo sur la falaise|Ponyo ; Le vent se lève"},
+  {q:"Les 9 épisodes de la saga Skywalker (Star Wars I à IX)",c:"Sagas",d:"Facile",a:"La Menace fantôme|The Phantom Menace|Episode 1|Episode I ; L'Attaque des clones|Attack of the Clones|Episode 2|Episode II ; La Revanche des Sith|Revenge of the Sith|Episode 3|Episode III ; Un nouvel espoir|A New Hope|Episode 4|Episode IV ; L'Empire contre-attaque|The Empire Strikes Back|Episode 5|Episode V ; Le Retour du Jedi|Return of the Jedi|Episode 6|Episode VI ; Le Réveil de la Force|The Force Awakens|Episode 7|Episode VII ; Les Derniers Jedi|The Last Jedi|Episode 8|Episode VIII ; L'Ascension de Skywalker|The Rise of Skywalker|Episode 9|Episode IX"},
+  {q:"Les 9 premiers longs métrages Pixar",c:"Films",d:"Moyen",a:"Toy Story ; 1001 pattes|Mille pattes|A Bug's Life ; Toy Story 2 ; Monstres et Cie|Monstres et compagnie|Monsters Inc ; Le Monde de Nemo|Finding Nemo ; Les Indestructibles|The Incredibles ; Cars ; Ratatouille ; WALL-E|Walle"},
+  {q:"Oscar du meilleur film d'animation, cérémonies 2015 à 2023",c:"Récompenses",d:"Moyen",a:"Les Nouveaux Héros|Big Hero 6 ; Vice-Versa|Inside Out ; Zootopie|Zootopia ; Coco ; Spider-Man : New Generation|Into the Spider-Verse|Spiderman ; Toy Story 4 ; Soul ; Encanto ; Pinocchio par Guillermo del Toro|Pinocchio"},
+  {q:"Les 9 membres du gang de La Casa de Papel (saison 1)",c:"Séries",d:"Moyen",a:"Le Professeur|El Profesor|Professor ; Tokyo ; Berlin ; Nairobi ; Rio ; Denver ; Moscou|Moscow ; Helsinki ; Oslo"},
+  {q:"Les 9 films réalisés par Quentin Tarantino (Kill Bill compte pour un seul)",c:"Films",d:"Moyen",a:"Reservoir Dogs ; Pulp Fiction ; Jackie Brown ; Kill Bill ; Boulevard de la mort|Death Proof ; Inglourious Basterds|Inglorious Basterds ; Django Unchained ; Les Huit Salopards|The Hateful Eight ; Once Upon a Time… in Hollywood"},
+  {q:"Les 9 membres de la Communauté de l'Anneau",c:"Personnages",d:"Facile",a:"Frodon|Frodo ; Sam|Samsagace|Samwise ; Merry ; Pippin|Peregrin ; Gandalf ; Aragorn ; Legolas ; Gimli ; Boromir"},
+  {q:"One Piece : l'équipage du Chapeau de paille, sans Jinbe",c:"Séries",d:"Moyen",a:"Luffy ; Zoro ; Nami ; Usopp|Pipo ; Sanji ; Chopper ; Robin ; Franky ; Brook"},
+  {q:"Twilight : les 9 Cullen à la fin de la saga",c:"Personnages",d:"Moyen",a:"Carlisle ; Esmé ; Edward ; Alice ; Jasper ; Rosalie ; Emmett ; Bella ; Renesmée|Nessie"},
+  {q:"Game of Thrones : les 9 grandes maisons de Westeros",c:"Séries",d:"Moyen",a:"Stark ; Lannister ; Targaryen ; Baratheon ; Greyjoy ; Tyrell ; Martell ; Arryn ; Tully"},
+  {q:"Oscar du meilleur film, cérémonies 2016 à 2024",c:"Récompenses",d:"Difficile",a:"Spotlight ; Moonlight ; La Forme de l'eau|The Shape of Water ; Green Book ; Parasite ; Nomadland ; CODA ; Everything Everywhere All at Once ; Oppenheimer"},
+  {q:"Oscar du meilleur acteur, cérémonies 2016 à 2024",c:"Acteurs",d:"Difficile",a:"Leonardo DiCaprio ; Casey Affleck ; Gary Oldman ; Rami Malek ; Joaquin Phoenix ; Anthony Hopkins ; Will Smith ; Brendan Fraser ; Cillian Murphy"},
+  {q:"Les 9 James Bond avec Pierce Brosnan ou Daniel Craig",c:"Sagas",d:"Moyen",a:"GoldenEye|Golden Eye ; Demain ne meurt jamais|Tomorrow Never Dies ; Le monde ne suffit pas|The World Is Not Enough ; Meurs un autre jour|Die Another Day ; Casino Royale ; Quantum of Solace ; Skyfall ; 007 Spectre|Spectre ; Mourir peut attendre|No Time to Die"},
+].map((x, i) => {
+  const answers = x.a.split(" ; ").map(s => s.split("|"));
+  // alts: other accepted spellings, shown small under the answer so the team that holds the phone can judge
+  return { id: i, q: x.q, cat: x.c, diff: x.d, answers: answers.map(a => a[0]), alts: answers.map(a => a.slice(1).filter(s => !/^Episode /.test(s)).join(", ")) };
+});
+
+// ---------- State ----------
+const CATS = ["Films", "Séries", "Personnages", "Sagas", "Acteurs", "Récompenses"];
+const COLORS = ["#f2b33d", "#5fb3e8", "#e2574c", "#7cc58a", "#c58ae6", "#f08bb4"];
+const DEFAULT_NAMES = ["Les Jedi", "Les Hobbits", "Les Weasley", "Les Cullen", "Les Stark", "Les Pixar"];
+const tierPts = n => n <= 3 ? 1 : n <= 6 ? 2 : 3; // game master mode: n = rank of the answer found in the round
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+const $ = id => document.getElementById(id);
+const plural = (n, w) => `${n} ${w}${n > 1 ? "s" : ""}`;
+
+let S;
+function defaults() {
+  const s = store.get("dn-settings-v2", null) || {};
+  return {
+    screen: "setup",
+    mode: s.mode ?? "turns",
+    teams: s.teams ?? [{ name: DEFAULT_NAMES[0] }, { name: DEFAULT_NAMES[1] }],
+    rounds: s.rounds ?? 10, seconds: s.seconds ?? 60, cats: s.cats ?? [...CATS],
+    game: null,
+  };
+}
+function saveSettings() { store.set("dn-settings-v2", { mode: S.mode, teams: S.teams, rounds: S.rounds, seconds: S.seconds, cats: S.cats }); }
+const pool = () => BANK.filter(b => S.cats.includes(b.cat));
+const maxRounds = () => S.mode === "turns" ? Math.floor(pool().length / S.teams.length) : pool().length;
+
+function pickQuestions(n) {
+  const p = pool();
+  let seen = store.get("dn-seen", []);
+  let fresh = p.filter(b => !seen.includes(b.id));
+  if (fresh.length < n) { seen = seen.filter(id => !p.some(b => b.id === id)); fresh = p.slice(); }
+  const out = fresh.sort(() => Math.random() - .5).slice(0, n);
+  store.set("dn-seen", [...seen, ...out.map(b => b.id)]);
+  return out.map(b => b.id);
+}
+
+// ---------- Setup ----------
+function renderSetup() {
+  const max = maxRounds();
+  const rounds = Math.min(S.rounds, max);
+  $("app").className = "app";
+  $("app").innerHTML = `
+    <header class="marquee">
+      <h1>Devine Neuf</h1>
+      <p>Ciné, séries, personnages. 9 réponses, ${S.seconds} secondes.</p>
+    </header>
+
+    <section class="section">
+      <span class="label">Mode de jeu</span>
+      <div class="modes">
+        <button class="mode" data-mode="turns" aria-pressed="${S.mode === "turns"}"><b>Tour par tour</b><span>Une équipe lit la question et coche les réponses. L'autre équipe répond. Puis on inverse. 1 pt par réponse.</span></button>
+        <button class="mode" data-mode="mj" aria-pressed="${S.mode === "mj"}"><b>Maître du jeu</b><span>Un MJ tient le téléphone. Les équipes crient en même temps. Points par paliers.</span></button>
+      </div>
+    </section>
+
+    <section class="section">
+      <span class="label">Équipes</span>
+      ${S.teams.map((t, i) => `
+        <div class="team-input">
+          <span class="swatch" style="background:${COLORS[i]}"></span>
+          <input id="team-${i}" value="${esc(t.name)}" maxlength="20" aria-label="Nom de l'équipe ${i + 1}">
+          ${S.teams.length > 2 ? `<button class="icon-btn" data-del="${i}" aria-label="Retirer l'équipe">×</button>` : ""}
+        </div>`).join("")}
+      ${S.teams.length < COLORS.length ? `<button class="ghost" id="addTeam">+ Ajouter une équipe</button>` : ""}
+    </section>
+
+    <section class="section">
+      <span class="label">Réglages</span>
+      <div>
+        <div class="setting"><span>Manches${S.mode === "turns" ? "<br><small class=\"hint\">1 question par équipe et par manche</small>" : ""}</span>
+          <div class="stepper"><button data-step="rounds:-1" aria-label="Moins">−</button><output>${rounds}</output><button data-step="rounds:1" aria-label="Plus">+</button></div></div>
+        <div class="setting"><span>Chrono</span>
+          <div class="stepper"><button data-step="seconds:-15" aria-label="Moins">−</button><output>${S.seconds} s</output><button data-step="seconds:15" aria-label="Plus">+</button></div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <span class="label">Thèmes</span>
+      <div class="chips">${CATS.map(c => `<button class="chip" data-cat="${c}" aria-pressed="${S.cats.includes(c)}">${c}</button>`).join("")}</div>
+      <p class="hint">${plural(pool().length, "question")} disponible${pool().length > 1 ? "s" : ""}, donc ${plural(max, "manche")} au maximum avec ces réglages.</p>
+    </section>
+
+    <div class="foot"><button class="cta" id="start" ${max >= 1 ? "" : "disabled"}>Lancer la partie</button></div>
+  `;
+  S.teams.forEach((t, i) => $("team-" + i).addEventListener("input", e => { S.teams[i].name = e.target.value; saveSettings(); }));
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { S.mode = b.dataset.mode; saveSettings(); render(); });
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { S.teams.splice(+b.dataset.del, 1); saveSettings(); render(); });
+  $("addTeam") && ($("addTeam").onclick = () => { S.teams.push({ name: DEFAULT_NAMES[S.teams.length] }); saveSettings(); render(); });
+  document.querySelectorAll("[data-step]").forEach(b => b.onclick = () => {
+    const [k, d] = b.dataset.step.split(":");
+    S[k] = k === "rounds" ? Math.min(10, Math.max(1, Math.min(S[k], maxRounds()) + +d)) : Math.min(120, Math.max(15, S[k] + +d));
+    saveSettings(); render();
+  });
+  document.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => {
+    const c = b.dataset.cat;
+    S.cats = S.cats.includes(c) ? S.cats.filter(x => x !== c) : [...S.cats, c];
+    saveSettings(); render();
+  });
+  $("start").onclick = startGame;
+}
+
+function startGame() {
+  S.teams = S.teams.map((t, i) => ({ name: t.name.trim() || DEFAULT_NAMES[i] }));
+  saveSettings();
+  const rounds = Math.min(S.rounds, maxRounds());
+  const perRound = S.mode === "turns" ? S.teams.length : 1;
+  S.game = { mode: S.mode, rounds, qs: pickQuestions(rounds * perRound), k: 0, totals: S.teams.map(() => 0), roundPts: S.teams.map(() => 0), play: null };
+  S.screen = S.mode === "turns" ? "handoff" : "play";
+  if (S.mode === "mj") S.game.play = newPlay();
+  unlockAudio(); keepAwake();
+  render();
+}
+const newPlay = () => ({ found: [], wrong: [], left: S.seconds, running: false, over: false });
+// play.found: [{ a: answer index, t: team index }] in the order the answers were found
+const curQ = () => BANK[S.game.qs[S.game.k]];
+const curTeam = () => S.game.k % S.teams.length;
+const curRound = () => S.game.mode === "turns" ? Math.floor(S.game.k / S.teams.length) : S.game.k;
+function playPoints(p) {
+  const pts = S.teams.map(() => 0);
+  p.found.forEach((f, i) => pts[f.t] += S.game.mode === "turns" ? 1 : tierPts(i + 1));
+  return pts;
+}
+
+// ---------- Timer ----------
+let tick = null;
+function startTimer() {
+  const p = S.game.play;
+  if (p.running || p.left <= 0) return;
+  p.running = true;
+  const end = Date.now() + p.left * 1000;
+  tick = setInterval(() => {
+    p.left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    if (p.left === 0) { stopTimer(); p.over = true; tone(330, .45); try { navigator.vibrate?.([200, 100, 200]); } catch {} onTimeUp(); return; }
+    if (p.left <= 3) tone(520, .07);
+    const el = $("timer"); if (el) { el.textContent = p.left; el.classList.toggle("low", p.left <= 5); }
+  }, 250);
+}
+function stopTimer() { clearInterval(tick); tick = null; if (S.game?.play) S.game.play.running = false; }
+function onTimeUp() {
+  if (S.game.mode === "turns") { S.screen = "turn-end"; render(); }
+  else { render(); flash(); }
+}
+function flash() { document.body.classList.add("flash"); setTimeout(() => document.body.classList.remove("flash"), 1300); }
+
+// ---------- Shared pieces ----------
+function scoresHtml(extra) {
+  return `<div class="scores">${S.teams.map((t, i) => `<div class="score" style="--c:${COLORS[i]}">${esc(t.name)} <span>${S.game.totals[i] + (extra ? extra[i] : 0)}</span></div>`).join("")}</div>`;
+}
+function tileHtml(q, i, p, reveal) {
+  const f = p.found.find(x => x.a === i);
+  const body = `<span class="n">${i + 1}</span><span class="txt">${esc(q.answers[i])}</span>${q.alts[i] && !reveal ? `<span class="alt txt">${esc(q.alts[i])}</span>` : ""}`;
+  if (reveal) return f
+    ? `<li class="tile found" style="--c:${COLORS[f.t]}"><span class="n">${i + 1}</span><span class="txt">${esc(q.answers[i])}</span></li>`
+    : `<li class="tile missed"><span class="n">${i + 1}</span><span class="txt">${esc(q.answers[i])}</span></li>`;
+  if (f) return `<li><button class="tile found" style="--c:${COLORS[f.t]}" data-pick="${i}">${body}${S.game.mode === "mj" ? `<span class="who">${esc(S.teams[f.t].name)}</span>` : ""}</button></li>`;
+  return `<li><button class="tile" data-pick="${i}">${body}</button></li>`;
+}
+const menuBtn = () => `<button class="menu-btn" id="menu">Menu</button>`;
+function openQuit() {
+  const close = () => { $("sheet").innerHTML = ""; };
+  $("sheet").innerHTML = `
+    <div class="sheet" id="sheetBg"><div class="sheet-in" role="dialog" aria-label="Quitter la partie">
+      <h3>Quitter la partie ?</h3>
+      <p class="hint">Les scores de cette partie seront perdus.</p>
+      <button class="cta" id="quit">Retour au menu</button>
+      <button class="ghost" id="cancel">Continuer la partie</button>
+    </div></div>`;
+  $("sheetBg").onclick = e => { if (e.target.id === "sheetBg") close(); };
+  $("cancel").onclick = close;
+  $("quit").onclick = () => { stopTimer(); close(); S.game = null; S.screen = "setup"; render(); };
+}
+
+// ---------- Turn mode ----------
+// Turn mode: team t answers, the next team holds the phone, reads the question and taps the answers found.
+const holder = () => (curTeam() + 1) % S.teams.length;
+function duoHtml() {
+  const t = curTeam(), h = holder();
+  return `<span class="duo"><b style="--c:${COLORS[h]}">${esc(S.teams[h].name)}</b> interroge <b style="--c:${COLORS[t]}">${esc(S.teams[t].name)}</b></span>`;
+}
+
+function renderHandoff() {
+  const t = curTeam(), h = holder(), g = S.game;
+  $("app").className = "app fit";
+  $("app").innerHTML = `
+    <div class="top">${menuBtn()}<span class="label">Manche ${curRound() + 1} / ${g.rounds}</span></div>
+    <div class="handoff" style="--c:${COLORS[t]}">
+      <span class="label">Au tour de</span>
+      <h2>${esc(S.teams[t].name)}</h2>
+      <p class="hint">Donnez le téléphone à <b style="color:${COLORS[h]}">${esc(S.teams[h].name)}</b>. Cette équipe lit la question à voix haute et coche chaque bonne réponse. Le chrono démarre avec Go : ${S.seconds} secondes.</p>
+    </div>
+    ${scoresHtml()}
+    <div class="foot"><button class="cta" id="go">Go</button></div>`;
+  $("go").onclick = () => { g.play = newPlay(); S.screen = "turn"; render(); startTimer(); };
+}
+
+function renderTurn() {
+  const g = S.game, p = g.play, q = curQ(), t = curTeam();
+  $("app").className = "app fit";
+  $("app").innerHTML = `
+    <div class="top">
+      <div class="meta">${menuBtn()}<span class="tag">${q.cat}</span><span class="label">${p.found.length} / 9</span></div>
+      <div class="timer ${p.left <= 5 ? "low" : ""}" id="timer">${p.left}</div>
+    </div>
+    ${duoHtml()}
+    <h2 class="question">${esc(q.q)}</h2>
+    <ol class="grid">${q.answers.map((_, i) => tileHtml(q, i, p, false)).join("")}</ol>
+    <p class="hint">Touchez une réponse quand l'équipe la trouve. Touchez-la encore pour annuler.</p>
+    <div class="foot" style="padding-bottom:0"><button class="ghost" id="giveup">Terminer le tour</button></div>`;
+  document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => {
+    const a = +b.dataset.pick;
+    p.found = p.found.some(f => f.a === a) ? p.found.filter(f => f.a !== a) : [...p.found, { a, t }];
+    if (p.found.length === 9) { stopTimer(); S.screen = "turn-end"; }
+    render();
+  });
+  $("giveup").onclick = () => { stopTimer(); p.over = true; S.screen = "turn-end"; render(); };
+}
+
+function renderTurnEnd() {
+  const g = S.game, p = g.play, q = curQ(), t = curTeam(), n = p.found.length;
+  $("app").className = "app fit";
+  $("app").innerHTML = `
+    <div class="top">
+      <div class="meta">${menuBtn()}<span class="team-tag" style="--c:${COLORS[t]}">${esc(S.teams[t].name)}</span><span class="tag">${q.cat}</span></div>
+      <span class="label">+${n} pt${n > 1 ? "s" : ""}</span>
+    </div>
+    <h2 class="question">${esc(q.q)}</h2>
+    <ol class="grid">${q.answers.map((_, i) => tileHtml(q, i, p, false)).join("")}</ol>
+    <p class="hint">${esc(S.teams[t].name)} trouve ${plural(n, "réponse")} sur 9. Touchez une réponse pour la cocher ou la décocher.</p>
+    ${scoresHtml(playPoints(p))}
+    <div class="foot" style="padding-bottom:0"><button class="cta" id="next">Continuer</button></div>`;
+  document.querySelectorAll("[data-pick]").forEach(b => {
+    if (!b.classList.contains("found")) b.classList.add("missed");
+    b.onclick = () => {
+      const a = +b.dataset.pick;
+      p.found = p.found.some(f => f.a === a) ? p.found.filter(f => f.a !== a) : [...p.found, { a, t }];
+      render();
+    };
+  });
+  $("next").onclick = () => {
+    const pts = playPoints(p);
+    g.totals = g.totals.map((v, i) => v + pts[i]);
+    g.roundPts = g.roundPts.map((v, i) => v + pts[i]);
+    g.k++;
+    S.screen = g.k % S.teams.length === 0 ? "round-end" : "handoff";
+    render();
+  };
+}
+
+// ---------- Game master mode ----------
+function renderPlay() {
+  const g = S.game, p = g.play, q = curQ();
+  const nextPts = p.found.length < 9 ? tierPts(p.found.length + 1) : null;
+  const done = p.over || p.found.length === 9;
+  $("app").className = "app fit";
+  $("app").innerHTML = `
+    <div class="top">
+      <div class="meta">${menuBtn()}<span class="label">Manche ${g.k + 1} / ${g.rounds}</span><span class="tag">${q.cat}</span></div>
+      <div class="timer ${p.over ? "over" : p.left <= 5 ? "low" : ""}" id="timer">${p.over ? "Temps écoulé" : p.left}</div>
+    </div>
+    <h2 class="question">${esc(q.q)}</h2>
+    <div class="status">
+      <span class="next-pts">${nextPts ? `Prochaine réponse : ${nextPts} pt${nextPts > 1 ? "s" : ""}` : "Grille complète"}</span>
+    </div>
+    <ol class="grid">${q.answers.map((_, i) => tileHtml(q, i, p, false)).join("")}</ol>
+    ${scoresHtml(playPoints(p))}
+    <div class="foot" style="padding-bottom:0">
+      ${done ? `<button class="cta" id="reveal">Révéler et voir les scores</button>`
+        : p.running ? `<button class="cta quiet" id="stop">Arrêter la manche</button>`
+        : `<button class="cta" id="go">${p.left < S.seconds ? "Reprendre le chrono" : "Lancer le chrono"}</button>`}
+    </div>`;
+  document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => openPicker(+b.dataset.pick));
+  $("go") && ($("go").onclick = () => { startTimer(); render(); });
+  $("stop") && ($("stop").onclick = () => { stopTimer(); p.over = true; render(); });
+  $("reveal") && ($("reveal").onclick = () => {
+    stopTimer();
+    const pts = playPoints(p);
+    g.totals = g.totals.map((v, i) => v + pts[i]);
+    g.roundPts = pts;
+    S.screen = "reveal"; render();
+  });
+}
+
+function openPicker(a) {
+  const p = S.game.play, q = curQ(), f = p.found.find(x => x.a === a);
+  if (f) { p.found = p.found.filter(x => x.a !== a); render(); return; } // a tap on a checked answer unchecks it
+  const close = () => { $("sheet").innerHTML = ""; };
+  $("sheet").innerHTML = `
+    <div class="sheet" id="sheetBg"><div class="sheet-in" role="dialog" aria-label="Qui a trouvé ?">
+      <h3>${esc(q.answers[a])}</h3>
+      ${f ? `<p class="hint">Trouvée par ${esc(S.teams[f.t].name)}.</p><button class="ghost" id="undo">Annuler cette réponse</button>`
+          : `<span class="label">Qui a trouvé ?</span>${S.teams.map((t, i) => `<button class="pick" style="--c:${COLORS[i]}" data-t="${i}">${esc(t.name)}</button>`).join("")}`}
+      <button class="ghost" id="cancel">Fermer</button>
+    </div></div>`;
+  $("sheetBg").onclick = e => { if (e.target.id === "sheetBg") close(); };
+  $("cancel").onclick = close;
+  $("undo") && ($("undo").onclick = () => { p.found = p.found.filter(x => x.a !== a); close(); render(); });
+  document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => {
+    p.found.push({ a, t: +b.dataset.t });
+    if (p.found.length === 9) stopTimer();
+    close(); render();
+  });
+}
+
+// ---------- Round results and end ----------
+function ranking() { return S.teams.map((t, i) => ({ i, name: t.name, v: S.game.totals[i] })).sort((a, b) => b.v - a.v); }
+function rankHtml(pts) {
+  return `<div class="table">${ranking().map((r, k) => `
+    <div class="rank ${k === 0 ? "first" : ""}" style="--c:${COLORS[r.i]}${pts ? "" : ";grid-template-columns:30px 1fr auto"}">
+      <span class="pos">${k + 1}</span><span class="name">${esc(r.name)}</span>${pts ? `<span class="delta">+${pts[r.i]}</span>` : ""}<span class="total">${r.v}</span>
+    </div>`).join("")}</div>`;
+}
+function nextRound() {
+  const g = S.game, finished = (g.mode === "turns" ? g.k : g.k + 1) >= g.qs.length;
+  if (finished) { S.screen = "end"; render(); return; }
+  if (g.mode === "mj") { g.k++; g.play = newPlay(); S.screen = "play"; }
+  else S.screen = "handoff";
+  g.roundPts = S.teams.map(() => 0);
+  render();
+}
+
+function renderReveal() { // game master mode, end of a round
+  const g = S.game, p = g.play, q = curQ();
+  $("app").className = "app";
+  $("app").innerHTML = `
+    <div class="top">${menuBtn()}<span class="label">Fin de la manche ${g.k + 1} / ${g.rounds}</span></div>
+    <h2 class="question">${esc(q.q)}</h2>
+    <ol class="grid" style="grid-template-rows:repeat(3,64px)">${q.answers.map((_, i) => tileHtml(q, i, p, true)).join("")}</ol>
+    <section class="section"><span class="label">Classement</span>${rankHtml(g.roundPts)}</section>
+    <div class="foot"><button class="cta" id="next">${g.k + 1 >= g.qs.length ? "Voir le classement final" : "Manche suivante"}</button></div>`;
+  $("next").onclick = nextRound;
+}
+
+function renderRoundEnd() { // turn mode, after every team played once
+  const g = S.game, r = curRound();
+  $("app").className = "app";
+  $("app").innerHTML = `
+    <div class="top">${menuBtn()}</div>
+    <header class="marquee"><span class="label">Fin de la manche</span><h1>${r} / ${g.rounds}</h1></header>
+    <section class="section"><span class="label">Classement</span>${rankHtml(g.roundPts)}</section>
+    <div class="foot"><button class="cta" id="next">${g.k >= g.qs.length ? "Voir le classement final" : "Manche suivante"}</button></div>`;
+  $("next").onclick = nextRound;
+}
+
+function renderEnd() {
+  const g = S.game, ranks = ranking(), top = ranks.filter(r => r.v === ranks[0].v);
+  $("app").className = "app";
+  $("app").innerHTML = `
+    <header class="marquee winner">
+      <span class="label">${top.length > 1 ? "Ex aequo" : "Victoire"}</span>
+      <h2>${top.map(r => esc(r.name)).join(" & ")}</h2>
+      <p>${plural(ranks[0].v, "point")} en ${plural(g.rounds, "manche")}</p>
+    </header>
+    <section class="section"><span class="label">Classement final</span>${rankHtml(null)}</section>
+    <div class="foot">
+      <button class="cta" id="again">Rejouer avec les mêmes équipes</button>
+      <button class="ghost" id="setup">Changer les réglages</button>
+    </div>`;
+  $("again").onclick = startGame;
+  $("setup").onclick = () => { S.game = null; S.screen = "setup"; render(); };
+}
+
+let lastScreen = null;
+function render() {
+  if (S.screen !== lastScreen) { window.scrollTo(0, 0); lastScreen = S.screen; } // keep the scroll position on the same screen
+  ({ setup: renderSetup, handoff: renderHandoff, turn: renderTurn, "turn-end": renderTurnEnd, play: renderPlay,
+     reveal: renderReveal, "round-end": renderRoundEnd, end: renderEnd })[S.screen]();
+  $("menu") && ($("menu").onclick = openQuit);
+}
+
+// ---------- Sound, screen, keyboard ----------
+let ctx = null;
+function unlockAudio() { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume?.(); } catch {} }
+function tone(freq, dur) {
+  if (!ctx) return;
+  try {
+    const o = ctx.createOscillator(), gn = ctx.createGain(), t0 = ctx.currentTime;
+    o.type = "sine"; o.frequency.value = freq;
+    gn.gain.setValueAtTime(.0001, t0); gn.gain.exponentialRampToValueAtTime(.08, t0 + .02); gn.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(gn); gn.connect(ctx.destination); o.start(t0); o.stop(t0 + dur + .02);
+  } catch {}
+}
+async function keepAwake() { try { await navigator.wakeLock?.request("screen"); } catch {} }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S?.game) keepAwake(); });
+
+// ---------- Boot (keeps the game state if the page updates during a game) ----------
+function start(data) {
+  S = data && data.S ? data.S : defaults();
+  if (S.game?.play) S.game.play.running = false;
+  if (S.screen === "turn") S.screen = "turn-end";
+  render();
+}
+window.claude?.hot?.snapshot?.(() => ({ S }));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
