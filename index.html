@@ -192,7 +192,7 @@ body { margin: 0; }
 <div id="sheet"></div>
 
 <script>
-// Questions from the Notion "Banque de questions" (statut != Rejetée), 2026-11-15.
+// Questions from the Notion "Banque de questions" (statut = Validée). A list can be open: other right answers exist but do not count.
 // "a": the 9 answers separated by " ; ". Inside one answer, "|" separates the accepted spellings (the first one is shown).
 const BANK = [
   {q:"Vice-Versa 2 : les 9 émotions de Riley",c:"Personnages",d:"Facile",a:"Joie|Joy ; Tristesse|Sadness ; Colère|Anger ; Peur|Fear ; Dégoût|Disgust ; Anxiété|Anxiety ; Envie|Envy ; Ennui ; Embarras|Embarrassment"},
@@ -213,6 +213,14 @@ const BANK = [
   {q:"Oscar du meilleur film, cérémonies 2016 à 2024",c:"Récompenses",d:"Difficile",a:"Spotlight ; Moonlight ; La Forme de l'eau|The Shape of Water ; Green Book ; Parasite ; Nomadland ; CODA ; Everything Everywhere All at Once ; Oppenheimer"},
   {q:"Oscar du meilleur acteur, cérémonies 2016 à 2024",c:"Acteurs",d:"Difficile",a:"Leonardo DiCaprio ; Casey Affleck ; Gary Oldman ; Rami Malek ; Joaquin Phoenix ; Anthony Hopkins ; Will Smith ; Brendan Fraser ; Cillian Murphy"},
   {q:"Les 9 James Bond avec Pierce Brosnan ou Daniel Craig",c:"Sagas",d:"Moyen",a:"GoldenEye|Golden Eye ; Demain ne meurt jamais|Tomorrow Never Dies ; Le monde ne suffit pas|The World Is Not Enough ; Meurs un autre jour|Die Another Day ; Casino Royale ; Quantum of Solace ; Skyfall ; 007 Spectre|Spectre ; Mourir peut attendre|No Time to Die"},
+  {q:"9 classiques d'animation Disney sortis avant 2000",c:"Films",d:"Facile",a:"Blanche-Neige et les Sept Nains|Blanche-Neige|Snow White ; Pinocchio ; Bambi ; Cendrillon|Cinderella ; Le Livre de la jungle|The Jungle Book ; La Petite Sirène|The Little Mermaid ; La Belle et la Bête|Beauty and the Beast ; Aladdin ; Le Roi lion|The Lion King"},
+  {q:"9 films de Martin Scorsese",c:"Films",d:"Moyen",a:"Taxi Driver ; Raging Bull ; Les Affranchis|Goodfellas ; Casino ; Gangs of New York ; Les Infiltrés|The Departed ; Shutter Island ; Le Loup de Wall Street|The Wolf of Wall Street ; Killers of the Flower Moon"},
+  {q:"Hunger Games : 9 spécialités des districts",c:"Sagas",d:"Moyen",a:"Luxe|Bijoux ; Technologie|Électronique ; Pêche|Poisson ; Énergie|Électricité ; Bois|Forêt|Papier ; Textile|Tissu|Vêtements ; Élevage|Bétail ; Agriculture|Fruits|Coton ; Charbon|Mines"},
+  {q:"Les 9 premiers longs métrages de David Lynch",c:"Films",d:"Difficile",a:"Eraserhead ; Elephant Man|The Elephant Man ; Dune ; Blue Velvet ; Sailor et Lula|Wild at Heart ; Twin Peaks: Fire Walk with Me|Twin Peaks|Twin Peaks le film ; Lost Highway ; Une histoire vraie|The Straight Story ; Mulholland Drive"},
+  {q:"Les Huit Salopards : les interprètes des 8 salopards + la guest star cachée",c:"Acteurs",d:"Difficile",a:"Samuel L. Jackson|Jackson ; Kurt Russell|Russell ; Jennifer Jason Leigh|Leigh ; Walton Goggins|Goggins ; Demián Bichir|Bichir ; Tim Roth|Roth ; Michael Madsen|Madsen ; Bruce Dern|Dern ; Channing Tatum|Tatum"},
+  {q:"Game of Thrones : les 9 Cités libres d'Essos",c:"Séries",d:"Difficile",a:"Braavos ; Pentos ; Volantis ; Myr ; Lys ; Tyrosh ; Qohor ; Norvos ; Lorath"},
+  {q:"Les 9 films d'animation Disney sortis de 2010 à 2019 (hors Pixar)",c:"Films",d:"Moyen",a:"Raiponce|Tangled ; Winnie l'ourson|Winnie the Pooh ; Les Mondes de Ralph|Wreck-It Ralph ; La Reine des neiges|Frozen ; Les Nouveaux Héros|Big Hero 6 ; Zootopie|Zootopia ; Vaiana|Moana ; Ralph 2.0|Ralph Breaks the Internet ; La Reine des neiges 2|Frozen 2"},
+  {q:"9 films avec Robert De Niro",c:"Acteurs",d:"Moyen",a:"Taxi Driver ; Le Parrain 2|Le Parrain, 2e partie|The Godfather Part II ; Voyage au bout de l'enfer|The Deer Hunter ; Raging Bull ; Il était une fois en Amérique|Once Upon a Time in America ; Les Affranchis|Goodfellas ; Heat ; Casino ; Mon beau-père et moi|Meet the Parents"},
 ].map((x, i) => {
   const answers = x.a.split(" ; ").map(s => s.split("|"));
   // alts: other accepted spellings, shown small under the answer so the team that holds the phone can judge
