@@ -290,11 +290,11 @@ function defaults() {
     screen: "setup",
     mode: s.mode ?? "turns",
     teams: s.teams ?? [{ name: DEFAULT_NAMES[0] }, { name: DEFAULT_NAMES[1] }],
-    rounds: s.rounds ?? 10, seconds: s.seconds ?? 60, cats: s.cats ?? [...CATS], diffs: s.diffs ?? [...DIFFS],
+    rounds: s.rounds ?? 10, seconds: s.seconds ?? 60, cats: s.cats ?? [...CATS], diffs: s.diffs ?? [...DIFFS], panache: s.panache ?? false,
     game: null,
   };
 }
-function saveSettings() { store.set("dn-settings-v2", { mode: S.mode, teams: S.teams, rounds: S.rounds, seconds: S.seconds, cats: S.cats, diffs: S.diffs }); }
+function saveSettings() { store.set("dn-settings-v2", { mode: S.mode, teams: S.teams, rounds: S.rounds, seconds: S.seconds, cats: S.cats, diffs: S.diffs, panache: S.panache }); }
 const pool = () => BANK.filter(b => S.cats.includes(b.cat) && S.diffs.includes(b.diff));
 const maxRounds = () => S.mode === "turns" ? Math.floor(pool().length / S.teams.length) : pool().length;
 
@@ -345,6 +345,8 @@ function renderSetup() {
           <div class="stepper"><button data-step="rounds:-1" aria-label="Moins">−</button><output>${rounds}</output><button data-step="rounds:1" aria-label="Plus">+</button></div></div>
         <div class="setting"><span>Chrono</span>
           <div class="stepper"><button data-step="seconds:-15" aria-label="Moins">−</button><output>${S.seconds} s</output><button data-step="seconds:15" aria-label="Plus">+</button></div></div>
+        <div class="setting"><span>Mode Panache<br><small class="hint">${S.panache ? "Interdit de changer de question" : "On peut changer une question trop dure"}</small></span>
+          <button class="chip" id="panache" aria-pressed="${S.panache}">${S.panache ? "Activé" : "Désactivé"}</button></div>
       </div>
     </section>
 
@@ -380,6 +382,7 @@ function renderSetup() {
     S.diffs = S.diffs.includes(d) ? S.diffs.filter(x => x !== d) : [...S.diffs, d];
     saveSettings(); render();
   });
+  $("panache").onclick = () => { S.panache = !S.panache; saveSettings(); render(); };
   $("start").onclick = startGame;
 }
 
@@ -556,6 +559,17 @@ function renderTurnEnd() {
 // Screen before each round: theme and question. The grid appears when Go starts the timer.
 const levelName = d => (LEVELS.find(l => l[0] === d) || [d, d])[1];
 const themeHtml = q => `<p class="theme"><span class="label">Thème</span> <b>${esc(q.cat)}</b> · ${esc(levelName(q.diff))}</p>`;
+// Without Panache mode, the reader can swap the current question for an unused one from the same settings.
+const spare = () => pool().filter(b => !S.game.qs.includes(b.id));
+const canSwap = () => !S.panache && spare().length > 0;
+function swapQuestion() {
+  const p = spare(); if (!p.length) return;
+  const seen = store.get("dn-seen", []), fresh = p.filter(b => !seen.includes(b.id)), from = fresh.length ? fresh : p;
+  const pick = from[Math.floor(Math.random() * from.length)];
+  S.game.qs[S.game.k] = pick.id;
+  store.set("dn-seen", [...seen, pick.id]);
+  render();
+}
 function renderReady() {
   const g = S.game, q = curQ(), turns = g.mode === "turns";
   $("app").className = "app fit";
@@ -568,7 +582,8 @@ function renderReady() {
       <p class="hint">Lis la question à voix haute${turns ? ` pour ${esc(S.teams[curTeam()].name)}` : ""}. Avec Go, les réponses apparaissent et le chrono démarre : ${S.seconds} secondes.</p>
     </div>
     ${scoresHtml()}
-    <div class="foot"><button class="cta" id="go">Go</button></div>`;
+    <div class="foot">${canSwap() ? `<button class="ghost" id="swap">Changer de question</button>` : ""}<button class="cta" id="go">Go</button></div>`;
+  $("swap") && ($("swap").onclick = swapQuestion);
   $("go").onclick = () => {
     if (turns) { g.play = newPlay(); S.screen = "turn"; } else S.screen = "play";
     startTimer(); render();
