@@ -345,7 +345,7 @@ function renderSetup() {
           <div class="stepper"><button data-step="rounds:-1" aria-label="Moins">−</button><output>${rounds}</output><button data-step="rounds:1" aria-label="Plus">+</button></div></div>
         <div class="setting"><span>Chrono</span>
           <div class="stepper"><button data-step="seconds:-15" aria-label="Moins">−</button><output>${S.seconds} s</output><button data-step="seconds:15" aria-label="Plus">+</button></div></div>
-        <div class="setting"><span>Mode Panache<br><small class="hint">${S.panache ? "Interdit de changer de question" : "On peut changer une question trop dure"}</small></span>
+        <div class="setting"><span>Mode Panache<br><small class="hint">Interdit de changer de question</small></span>
           <button class="chip" id="panache" aria-pressed="${S.panache}">${S.panache ? "Activé" : "Désactivé"}</button></div>
       </div>
     </section>
