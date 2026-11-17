@@ -553,7 +553,7 @@ function renderTurnEnd() {
 }
 
 // ---------- Game master mode ----------
-// Theme screen before each round: the question and the grid appear when Go starts the timer.
+// Screen before each round: theme and question. The grid appears when Go starts the timer.
 const levelName = d => (LEVELS.find(l => l[0] === d) || [d, d])[1];
 const themeHtml = q => `<p class="theme"><span class="label">Thème</span> <b>${esc(q.cat)}</b> · ${esc(levelName(q.diff))}</p>`;
 function renderReady() {
@@ -562,10 +562,9 @@ function renderReady() {
   $("app").innerHTML = `
     <div class="top">${menuBtn()}<span class="label">Manche ${g.k + 1} / ${g.rounds}</span></div>
     <div class="handoff" style="--c:var(--accent)">
-      <span class="label">Thème</span>
-      <h2>${esc(q.cat)}</h2>
-      <p class="tag">${esc(levelName(q.diff))}</p>
-      <p class="hint">La question et les réponses apparaissent avec Go, et le chrono démarre en même temps : ${S.seconds} secondes.</p>
+      ${themeHtml(q)}
+      <h2 class="question" style="color:var(--fg);font-size:clamp(28px, 9vw, 44px);line-height:1.05">${esc(q.q)}</h2>
+      <p class="hint">Lis la question à voix haute. Avec Go, les réponses apparaissent et le chrono démarre : ${S.seconds} secondes.</p>
     </div>
     ${scoresHtml()}
     <div class="foot"><button class="cta" id="go">Go</button></div>`;
