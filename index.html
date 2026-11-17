@@ -386,6 +386,17 @@ function track(path, title) {
   try { window.goatcounter?.count?.({ path, title: title || path, event: true }); } catch {}
 }
 const modeName = m => m === "mj" ? "maitre-du-jeu" : "tour-par-tour";
+// Unique browsers: a flag in localStorage (no ID, nothing personal) so each browser sends
+// "nouveau-navigateur" once ever, and "actif/YYYY-MM" once per month.
+function trackUnique(tries = 0) {
+  if (!window.goatcounter?.count) { if (tries < 15) setTimeout(() => trackUnique(tries + 1), 1000); return; } // wait for count.js, give up if blocked
+  try {
+    if (!localStorage.getItem("dn-known")) { localStorage.setItem("dn-known", "1"); track("nouveau-navigateur"); }
+    const month = new Date().toISOString().slice(0, 7);
+    if (localStorage.getItem("dn-active") !== month) { localStorage.setItem("dn-active", month); track("actif/" + month); }
+  } catch {}
+}
+setTimeout(trackUnique, 1000);
 
 function startGame() {
   S.teams = S.teams.map((t, i) => ({ name: t.name.trim() || DEFAULT_NAMES[i] }));
