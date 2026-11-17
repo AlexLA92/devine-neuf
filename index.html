@@ -177,6 +177,8 @@ button.tile { width: 100%; height: 100%; }
 
 /* Handoff and results */
 .handoff { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 12px; }
+.theme { margin: 0; font-size: 16px; color: var(--muted); }
+.theme b { color: var(--fg); }
 .handoff h2 { font-size: clamp(48px, 15vw, 80px); line-height: .9; color: var(--c); }
 .table { display: flex; flex-direction: column; gap: 6px; }
 .rank { display: grid; grid-template-columns: 30px 1fr auto auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 6px; background: var(--surface); border-left: 6px solid var(--c); }
@@ -404,7 +406,7 @@ function startGame() {
   const rounds = Math.min(S.rounds, maxRounds());
   const perRound = S.mode === "turns" ? S.teams.length : 1;
   S.game = { mode: S.mode, rounds, qs: pickQuestions(rounds * perRound), k: 0, totals: S.teams.map(() => 0), roundPts: S.teams.map(() => 0), play: null };
-  S.screen = S.mode === "turns" ? "handoff" : "play";
+  S.screen = S.mode === "turns" ? "handoff" : "ready";
   if (S.mode === "mj") S.game.play = newPlay();
   unlockAudio(); keepAwake();
   track("partie-lancee");
@@ -489,6 +491,7 @@ function renderHandoff() {
     <div class="handoff" style="--c:${COLORS[t]}">
       <span class="label">Au tour de</span>
       <h2>${esc(S.teams[t].name)}</h2>
+      ${themeHtml(BANK[g.qs[g.k]])}
       <p class="hint">Donnez le téléphone à <b style="color:${COLORS[h]}">${esc(S.teams[h].name)}</b>. Cette équipe lit la question à voix haute et coche chaque bonne réponse. Le chrono démarre avec Go : ${S.seconds} secondes.</p>
     </div>
     ${scoresHtml()}
@@ -550,6 +553,24 @@ function renderTurnEnd() {
 }
 
 // ---------- Game master mode ----------
+// Theme screen before each round: the question and the grid appear when Go starts the timer.
+const levelName = d => (LEVELS.find(l => l[0] === d) || [d, d])[1];
+const themeHtml = q => `<p class="theme"><span class="label">Thème</span> <b>${esc(q.cat)}</b> · ${esc(levelName(q.diff))}</p>`;
+function renderReady() {
+  const g = S.game, q = curQ();
+  $("app").className = "app fit";
+  $("app").innerHTML = `
+    <div class="top">${menuBtn()}<span class="label">Manche ${g.k + 1} / ${g.rounds}</span></div>
+    <div class="handoff" style="--c:var(--accent)">
+      <span class="label">Thème</span>
+      <h2>${esc(q.cat)}</h2>
+      <p class="tag">${esc(levelName(q.diff))}</p>
+      <p class="hint">La question et les réponses apparaissent avec Go, et le chrono démarre en même temps : ${S.seconds} secondes.</p>
+    </div>
+    ${scoresHtml()}
+    <div class="foot"><button class="cta" id="go">Go</button></div>`;
+  $("go").onclick = () => { S.screen = "play"; startTimer(); render(); };
+}
 function renderPlay() {
   const g = S.game, p = g.play, q = curQ();
   const nextPts = p.found.length < 9 ? tierPts(p.found.length + 1) : null;
@@ -623,7 +644,7 @@ function rankHtml(pts) {
 function nextRound() {
   const g = S.game, finished = (g.mode === "turns" ? g.k : g.k + 1) >= g.qs.length;
   if (finished) { track("partie-terminee"); S.screen = "end"; render(); return; }
-  if (g.mode === "mj") { g.k++; g.play = newPlay(); S.screen = "play"; }
+  if (g.mode === "mj") { g.k++; g.play = newPlay(); S.screen = "ready"; }
   else S.screen = "handoff";
   g.roundPts = S.teams.map(() => 0);
   render();
@@ -673,7 +694,7 @@ function renderEnd() {
 let lastScreen = null;
 function render() {
   if (S.screen !== lastScreen) { window.scrollTo(0, 0); lastScreen = S.screen; } // keep the scroll position on the same screen
-  ({ setup: renderSetup, handoff: renderHandoff, turn: renderTurn, "turn-end": renderTurnEnd, play: renderPlay,
+  ({ setup: renderSetup, handoff: renderHandoff, ready: renderReady, turn: renderTurn, "turn-end": renderTurnEnd, play: renderPlay,
      reveal: renderReveal, "round-end": renderRoundEnd, end: renderEnd })[S.screen]();
   $("menu") && ($("menu").onclick = openQuit);
 }
