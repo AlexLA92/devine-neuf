@@ -1,4 +1,4 @@
-# Devine Neuf
+# Ninebuster (dépôt devine-neuf)
 
 Jeu de soirée ciné et séries, dans un seul fichier : `index.html`.
 

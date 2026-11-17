@@ -1,4 +1,4 @@
-# Devine Neuf
+# Ninebuster
 
 Jeu de soirée ciné et séries sur un seul téléphone. Une équipe lit la question et coche les réponses. L'autre équipe cherche les 9 réponses.
 
