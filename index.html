@@ -269,7 +269,7 @@ const BANK = [
 
 // ---------- State ----------
 const CATS = ["Films", "Séries", "Personnages", "Sagas", "Acteurs", "Récompenses"];
-const LEVELS = [["Facile", "Hobbit"], ["Moyen", "Moldu"], ["Difficile", "Elfe"]]; // [value in BANK, label shown]
+const LEVELS = [["Facile", "🍿"], ["Moyen", "🍿🍿"], ["Difficile", "🍿🍿🍿"]]; // [value in BANK, label shown: 1 to 3 popcorns]
 const DIFFS = LEVELS.map(l => l[0]);
 const COLORS = ["#f2b33d", "#5fb3e8", "#e2574c", "#7cc58a", "#c58ae6", "#f08bb4"];
 const DEFAULT_NAMES = ["Les Jedi", "Les Hobbits", "Les Weasley", "Les Cullen", "Les Stark", "Les Pixar"];
@@ -357,7 +357,7 @@ function renderSetup() {
 
     <section class="section">
       <span class="label">Niveau</span>
-      <div class="chips">${LEVELS.map(([d, label]) => `<button class="chip" data-diff="${d}" aria-pressed="${S.diffs.includes(d)}">${label}</button>`).join("")}</div>
+      <div class="chips">${LEVELS.map(([d, label]) => `<button class="chip" data-diff="${d}" aria-pressed="${S.diffs.includes(d)}" aria-label="${d}" title="${d}">${label}</button>`).join("")}</div>
       <p class="hint">${plural(pool().length, "question")} disponible${pool().length > 1 ? "s" : ""}, donc ${plural(max, "manche")} au maximum avec ces réglages.</p>
     </section>
 
