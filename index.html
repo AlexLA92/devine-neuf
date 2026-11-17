@@ -134,6 +134,14 @@ button.tile { width: 100%; height: 100%; }
 .tile.found { border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 24%, var(--surface)); }
 .tile.found .n { color: var(--c); }
 .tile .who { position: absolute; bottom: 3px; right: 6px; font-size: 10px; font-weight: 800; color: var(--c); }
+/* Game master mode: one button per team inside each answer, so one tap records who found it */
+.tile.mj { padding: 4px; }
+.tile.mj .body { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.tp { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; flex: none; }
+.tp button { flex: 1 0 30%; min-width: 0; min-height: 28px; padding: 0 3px; border-radius: 4px; border: 1px solid var(--c);
+  background: color-mix(in srgb, var(--c) 30%, var(--surface)); color: var(--fg); font-size: 10px; font-weight: 800;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp button:active { background: var(--c); }
 .tile.missed { border-style: dashed; color: var(--muted); font-weight: 700; }
 .tile.pop { animation: pop .35s ease-out; }
 @keyframes pop { 40% { transform: scale(1.08); } }
@@ -424,6 +432,8 @@ function tileHtml(q, i, p, reveal) {
     ? `<li class="tile found" style="--c:${COLORS[f.t]}"><span class="n">${i + 1}</span><span class="txt">${esc(q.answers[i])}</span></li>`
     : `<li class="tile missed"><span class="n">${i + 1}</span><span class="txt">${esc(q.answers[i])}</span></li>`;
   if (f) return `<li><button class="tile found" style="--c:${COLORS[f.t]}" data-pick="${i}">${body}${S.game.mode === "mj" ? `<span class="who">${esc(S.teams[f.t].name)}</span>` : ""}</button></li>`;
+  if (S.game.mode === "mj") return `<li class="tile mj"><span class="body">${body}</span><span class="tp">${S.teams.map((t, k) =>
+    `<button style="--c:${COLORS[k]}" data-tp="${i}:${k}" aria-label="Trouvée par ${esc(t.name)}">${esc(t.name.replace(/^(les|la|le|l')\s*/i, ""))}</button>`).join("")}</span></li>`;
   return `<li><button class="tile" data-pick="${i}">${body}</button></li>`;
 }
 const menuBtn = () => `<button class="menu-btn" id="menu">Menu</button>`;
@@ -540,6 +550,14 @@ function renderPlay() {
         : `<button class="cta" id="go">${p.left < S.seconds ? "Reprendre le chrono" : "Lancer le chrono"}</button>`}
     </div>`;
   document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => openPicker(+b.dataset.pick));
+  document.querySelectorAll("[data-tp]").forEach(b => b.onclick = () => {
+    const [a, t] = b.dataset.tp.split(":").map(Number);
+    if (p.found.some(x => x.a === a)) return;
+    p.found.push({ a, t });
+    try { navigator.vibrate?.(30); } catch {}
+    if (p.found.length === 9) stopTimer();
+    render();
+  });
   $("go") && ($("go").onclick = () => { startTimer(); render(); });
   $("stop") && ($("stop").onclick = () => { stopTimer(); p.over = true; render(); });
   $("reveal") && ($("reveal").onclick = () => {
