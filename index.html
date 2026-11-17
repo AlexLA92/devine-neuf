@@ -492,11 +492,11 @@ function renderHandoff() {
       <span class="label">Au tour de</span>
       <h2>${esc(S.teams[t].name)}</h2>
       ${themeHtml(BANK[g.qs[g.k]])}
-      <p class="hint">Donnez le téléphone à <b style="color:${COLORS[h]}">${esc(S.teams[h].name)}</b>. Cette équipe lit la question à voix haute et coche chaque bonne réponse. Le chrono démarre avec Go : ${S.seconds} secondes.</p>
+      <p class="hint">Passez le téléphone à <b style="color:${COLORS[h]}">${esc(S.teams[h].name)}</b>. Cette équipe lit la question à voix haute et coche chaque bonne réponse.</p>
     </div>
     ${scoresHtml()}
-    <div class="foot"><button class="cta" id="go">Go</button></div>`;
-  $("go").onclick = () => { g.play = newPlay(); S.screen = "turn"; render(); startTimer(); };
+    <div class="foot"><button class="cta" id="go">${esc(S.teams[h].name)} a le téléphone</button></div>`;
+  $("go").onclick = () => { S.screen = "ready"; render(); };
 }
 
 function renderTurn() {
@@ -557,18 +557,22 @@ function renderTurnEnd() {
 const levelName = d => (LEVELS.find(l => l[0] === d) || [d, d])[1];
 const themeHtml = q => `<p class="theme"><span class="label">Thème</span> <b>${esc(q.cat)}</b> · ${esc(levelName(q.diff))}</p>`;
 function renderReady() {
-  const g = S.game, q = curQ();
+  const g = S.game, q = curQ(), turns = g.mode === "turns";
   $("app").className = "app fit";
   $("app").innerHTML = `
-    <div class="top">${menuBtn()}<span class="label">Manche ${g.k + 1} / ${g.rounds}</span></div>
+    <div class="top">${menuBtn()}<span class="label">Manche ${curRound() + 1} / ${g.rounds}</span></div>
     <div class="handoff" style="--c:var(--accent)">
+      ${turns ? `<span class="label">Au tour de <b style="color:${COLORS[curTeam()]}">${esc(S.teams[curTeam()].name)}</b></span>` : ""}
       ${themeHtml(q)}
       <h2 class="question" style="color:var(--fg);font-size:clamp(28px, 9vw, 44px);line-height:1.05">${esc(q.q)}</h2>
-      <p class="hint">Lis la question à voix haute. Avec Go, les réponses apparaissent et le chrono démarre : ${S.seconds} secondes.</p>
+      <p class="hint">Lis la question à voix haute${turns ? ` pour ${esc(S.teams[curTeam()].name)}` : ""}. Avec Go, les réponses apparaissent et le chrono démarre : ${S.seconds} secondes.</p>
     </div>
     ${scoresHtml()}
     <div class="foot"><button class="cta" id="go">Go</button></div>`;
-  $("go").onclick = () => { S.screen = "play"; startTimer(); render(); };
+  $("go").onclick = () => {
+    if (turns) { g.play = newPlay(); S.screen = "turn"; } else S.screen = "play";
+    startTimer(); render();
+  };
 }
 function renderPlay() {
   const g = S.game, p = g.play, q = curQ();
